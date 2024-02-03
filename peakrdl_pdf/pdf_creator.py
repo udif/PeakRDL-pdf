@@ -198,7 +198,9 @@ class PDFCreator:
     ############################################################################
     def create_addrmap_info(self, map_info_dict: dict):
         for key in map_info_dict:
-            if key == "Name":
+            if key == "units":
+                continue
+            elif key == "Name":
                 elements.append(Paragraph(map_info_dict[key], styleSheet["H1p"]))
                 elements.append(Spacer(0, 0.5*inch))
             elif key == "Desc":
@@ -208,7 +210,7 @@ class PDFCreator:
                 elements.append(Paragraph(('<b>Base Address: </b>' + map_info_dict[key]), 
                                     styleSheet["BodyTextP"]))
             elif key == "Size":
-                elements.append(Paragraph(('<b>Size(bytes): </b>' + map_info_dict[key]), 
+                elements.append(Paragraph(('<b>Size(' + map_info_dict["units"] + '): </b>' + map_info_dict[key]), 
                                     styleSheet["BodyTextP"]))
                 elements.append(Spacer(0, 0.2*inch))
             else:
@@ -219,7 +221,7 @@ class PDFCreator:
         elements.append(Spacer(0, 0.4*inch))
 
         ## Actual Header data
-        P_offset_header = Paragraph('<b>Offset</b>',styleSheet["BodyTextT"])    
+        P_offset_header = Paragraph('<b>Offset (' + map_info_dict["units"] + ')</b>',styleSheet["BodyTextT"])    
         P_identifier_header = Paragraph('<b>Identifier</b>',styleSheet["BodyTextT"])    
         P_name_header = Paragraph('<b>Name</b>',styleSheet["BodyTextT"])    
 
@@ -233,7 +235,9 @@ class PDFCreator:
     ############################################################################
     def create_register_info(self, reg_info_dict: dict):
         for key in reg_info_dict:
-            if key == "Name":
+            if key == "units":
+                continue
+            elif key == "Name":
                 tag_id = "<a name=\"" +  (reg_info_dict[key]).replace(" ","") + "\"/>"
                 dummy = "" # done so that the jump doesn't mask the required data
                 elements.append(Paragraph((tag_id + dummy), styleSheet["BodyTextP"]))
@@ -246,10 +250,10 @@ class PDFCreator:
                 elements.append(Paragraph(reg_info_dict[key], styleSheet["BodyTextP"]))
                 elements.append(Spacer(0, 0.2*inch))
             elif key == "Absolute_address":
-                elements.append(Paragraph(('<b>Absolute Address: </b>' + ('&nbsp;')*2 + reg_info_dict[key]), 
+                elements.append(Paragraph(('<b>Absolute Address (' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*2 + reg_info_dict[key]), 
                                     styleSheet["BodyTextP"]))
             elif key == "Base_offset":
-                elements.append(Paragraph(('<b>Base Offset: </b>' + ('&nbsp;')*13 + reg_info_dict[key]), 
+                elements.append(Paragraph(('<b>Base Offset (' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*13 + reg_info_dict[key]), 
                                     styleSheet["BodyTextP"]))
             elif key == "Reset":
                 elements.append(Paragraph(('<b>Reset: </b>' + ('&nbsp;')*23 + reg_info_dict[key]), 
@@ -258,7 +262,7 @@ class PDFCreator:
                 elements.append(Paragraph(('<b>Access: </b>' + ('&nbsp;')*20 + reg_info_dict[key]), 
                                     styleSheet["BodyTextP"]))
             elif key == "Size":
-                elements.append(Paragraph(('<b>Size(bytes): </b>' + ('&nbsp;')*14 + reg_info_dict[key]), 
+                elements.append(Paragraph(('<b>Size(' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*14 + reg_info_dict[key]), 
                                     styleSheet["BodyTextP"]))
                 elements.append(Spacer(0, 0.2*inch))
             else:

@@ -3,6 +3,7 @@ import os
 import re
 import datetime
 import time
+import math
 
 from systemrdl.node import RootNode, Node, RegNode, AddrmapNode, RegfileNode
 from systemrdl.node import FieldNode, MemNode, AddressableNode
@@ -133,6 +134,16 @@ class PDFExporter:
         self.set_address_width(node)
         self.set_base_address(node)
 
+        if self.check_udp("addr_elem_size", node):
+            self.elem_addr_bits = int(math.log2(node.get_property("addr_elem_size", default=0x0)))
+        else:
+            self.elem_addr_bits = 0
+        if self.elem_addr_bits == 0:
+            self.units = "bytes"
+        else:
+            self.units = "uint%d" % (1 << (self.elem_addr_bits+3))
+
+        addrmap_strg['units'] = self.units
         addrmap_strg['Name'] = "%s %s" % ((root_id+1),self.get_name(node))
         addrmap_strg['Desc'] = self.get_desc(node)
         addrmap_strg['Base_address'] = self.get_base_address(node)
@@ -142,18 +153,19 @@ class PDFExporter:
         # Create a list of all registers for the map
         for reg_id, reg in enumerate(node.registers()):
             addrmap_reg_list_strg = {}
+            addrmap_reg_list_strg['units'] = self.units
             
             # Reserved addresses at the start of the address map
             if reg_id == 0 and reg.address_offset != 0:
-                offset_range = "%s till %s" % ((self.format_address(0)),self.format_address(reg.address_offset-1))
-                addrmap_reg_list_strg['Offset']     = offset_range 
+                offset_range = "%s till %s" % ((self.format_address(0)),self.format_address((reg.address_offset >> self.elem_addr_bits)-1))
+                addrmap_reg_list_strg['Offset']     = offset_range
                 addrmap_reg_list_strg['Identifier'] = "-" 
                 addrmap_reg_list_strg['Name']       = "-"
                 self.pdf_create.create_reg_list_info(addrmap_reg_list_strg, 1)
 
             # Reserved addresses in between the address map - for single space
             elif (reg_id != 0) and (reg_previous.address_offset + 2*reg_previous.total_size) == reg.address_offset:
-                addrmap_reg_list_strg['Offset']     = self.format_address(reg_previous.address_offset + reg_previous.total_size)
+                addrmap_reg_list_strg['Offset']     = self.format_address((reg_previous.address_offset + reg_previous.total_size) >> self.elem_addr_bits)
                 addrmap_reg_list_strg['Identifier'] = "-" 
                 addrmap_reg_list_strg['Name']       = "-"
                 self.pdf_create.create_reg_list_info(addrmap_reg_list_strg, 1)
@@ -168,14 +180,14 @@ class PDFExporter:
                     
                 end_addr = reg_previous.address_offset + reg_previous.total_size + index
 
-                offset_range = "%s till %s" % ((self.format_address(start_addr)),self.format_address(end_addr-1))
+                offset_range = "%s till %s" % ((self.format_address(start_addr >> self.elem_addr_bits)),self.format_address((end_addr >> self.elem_addr_bits)-1))
                 addrmap_reg_list_strg['Offset']     = offset_range 
                 addrmap_reg_list_strg['Identifier'] = "-" 
                 addrmap_reg_list_strg['Name']       = "-"
                 self.pdf_create.create_reg_list_info(addrmap_reg_list_strg, 1)
 
             # Normal registers in the address map
-            addrmap_reg_list_strg['Offset']     = self.format_address(reg.address_offset) 
+            addrmap_reg_list_strg['Offset']     = self.format_address(reg.address_offset >> self.elem_addr_bits) 
             addrmap_reg_list_strg['Identifier'] = self.get_inst_name(reg)
             addrmap_reg_list_strg['Id']         = "%s.%s" % ((root_id+1),(reg_id+1))
             addrmap_reg_list_strg['Name']       = self.get_inst_name(reg)
@@ -193,6 +205,7 @@ class PDFExporter:
         # Traverse all the registers for separate register(s) section
         for reg_id, reg in enumerate(node.registers()):
             registers_strg = {}
+            registers_strg['units'] = self.units
             registers_strg['Name'] = "%s.%s %s" % ((root_id+1),(reg_id+1),self.get_inst_name(reg))
             registers_strg['Desc1'] = self.get_name(reg)
             registers_strg['Desc2'] = self.get_desc(reg)
@@ -241,7 +254,7 @@ class PDFExporter:
 
     def get_addrmap_size(self, node: Node) -> str:
         # Get the hex value 
-        s = hex(node.size)
+        s = hex(node.size >> self.elem_addr_bits)
         return s
 
     def get_inst_name(self, node: Node) -> str:
@@ -414,12 +427,12 @@ class PDFExporter:
     def get_reg_absolute_address(self, node: RegNode) -> str:
         #abs_addr = self.absolute_address
         abs_addr = self.base_address + node.address_offset
-        s = self.format_address(abs_addr)
+        s = self.format_address(abs_addr >> self.elem_addr_bits)
         return s
 
     def get_reg_offset(self, node: RegNode) -> str:
         add_offset = node.address_offset
-        s = self.format_address(add_offset)
+        s = self.format_address(add_offset >> self.elem_addr_bits)
         return s
 
     def get_reg_access(self, node: RegNode) -> str:
@@ -482,7 +495,7 @@ class PDFExporter:
         Get the size of the register
         """
 
-        return (hex(node.total_size))
+        return (hex(node.total_size >> self.elem_addr_bits))
 
     def check_udp(self, prop_name: str, node: Node) -> bool:
         """
@@ -532,12 +545,12 @@ class PDFExporter:
         is_defined = self.check_udp("base_address_p", node)
         
         if not is_defined:
-            return (self.format_address(base_address)) 
+            return (self.format_address(base_address >> self.elem_addr_bits)) 
 
         # Get the value
         base_address = amap.get_property("base_address_p", default=base_address);
 
-        return (self.format_address(base_address)) 
+        return (self.format_address(base_address >> self.elem_addr_bits)) 
 
     def format_address(self, address: str) -> str:
 
