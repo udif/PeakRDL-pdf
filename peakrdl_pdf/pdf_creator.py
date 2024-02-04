@@ -234,6 +234,7 @@ class PDFCreator:
     # Create the register information  
     ############################################################################
     def create_register_info(self, reg_info_dict: dict):
+        t_elements=[]
         for key in reg_info_dict:
             if key == "units":
                 continue
@@ -250,25 +251,32 @@ class PDFCreator:
                 elements.append(Paragraph(reg_info_dict[key], styleSheet["BodyTextP"]))
                 elements.append(Spacer(0, 0.2*inch))
             elif key == "Absolute_address":
-                elements.append(Paragraph(('<b>Absolute Address (' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*2 + reg_info_dict[key]), 
-                                    styleSheet["BodyTextP"]))
+                #elements.append(Paragraph(('<b>Absolute Address (' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*2 + reg_info_dict[key]), 
+                #                    styleSheet["BodyTextP"]))
+                t_elements.append([Paragraph('<b>Absolute Address (' + reg_info_dict["units"] + '):</b>'), Paragraph(reg_info_dict[key])])
             elif key == "Base_offset":
-                elements.append(Paragraph(('<b>Base Offset (' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*13 + reg_info_dict[key]), 
-                                    styleSheet["BodyTextP"]))
+                t_elements.append([Paragraph('<b>Base Offset (' + reg_info_dict["units"] + '):</b>'), Paragraph(reg_info_dict[key])])
             elif key == "Reset":
-                elements.append(Paragraph(('<b>Reset: </b>' + ('&nbsp;')*23 + reg_info_dict[key]), 
-                                    styleSheet["BodyTextP"]))
+                #elements.append(Paragraph(('<b>Reset: </b>' + ('&nbsp;')*23 + reg_info_dict[key]), 
+                #                    styleSheet["BodyTextP"]))
+                t_elements.append([Paragraph('<b>Reset:</b>'), Paragraph(reg_info_dict[key])])
             elif key == "Access":
-                elements.append(Paragraph(('<b>Access: </b>' + ('&nbsp;')*20 + reg_info_dict[key]), 
-                                    styleSheet["BodyTextP"]))
+                #elements.append(Paragraph(('<b>Access: </b>' + ('&nbsp;')*20 + reg_info_dict[key]), 
+                #                    styleSheet["BodyTextP"]))
+                t_elements.append([Paragraph('<b>Access:</b>'), Paragraph(reg_info_dict[key])])
             elif key == "Size":
-                elements.append(Paragraph(('<b>Size(' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*14 + reg_info_dict[key]), 
-                                    styleSheet["BodyTextP"]))
-                elements.append(Spacer(0, 0.2*inch))
+                #elements.append(Paragraph(('<b>Size(' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*14 + reg_info_dict[key]), 
+                #                    styleSheet["BodyTextP"]))
+                #elements.append(Spacer(0, 0.2*inch))
+                t_elements.append([Paragraph('<b>Size(' + reg_info_dict["units"] + '):</b>'), Paragraph(reg_info_dict[key])])
             else:
                 print("Error - Not a valid key (%s) for the register" %key)
 
         # Add the Fields list
+        t = Table(t_elements, [5*cm, 3*cm], len(t_elements)*[0.45*cm], hAlign='LEFT')
+        #t.setStyle(TableStyles([('TOPPADDING')]))
+        elements.append(t)
+        elements.append(Spacer(0, 0.2*inch))
         elements.append(Paragraph('Fields List', styleSheet["H2p"]))
         elements.append(Spacer(0, 0.4*inch))
 
