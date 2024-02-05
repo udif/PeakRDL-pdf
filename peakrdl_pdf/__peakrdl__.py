@@ -38,6 +38,12 @@ class Exporter(ExporterSubcommandPlugin):
             default=None,
             help="Specify path for python module containing myFirstPage() and myLaterPages(). If not specified, use default methods"
         )
+        arg_group.add_argument(
+            "-u", "--unroll",
+            default=False,
+            action="store_true",
+            help="Unroll arrays"
+        )
         pass
 
     def do_export(self, top_node: 'AddrmapNode', options: 'argparse.Namespace') -> None:
