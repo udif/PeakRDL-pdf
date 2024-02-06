@@ -74,7 +74,11 @@ class PDFExporter:
         # Get the current time (hh:mm:ss)
         self.current_time = time.strftime('%H:%M:%S') 
 
+        # do we want the fields in reverse order?
+        self.reverse = False
+
         # Create the global variable for pdf creation
+        # TODO: control by command line flags
         global pdf_create
 
     def set_address_width(self, node: Node):
@@ -196,7 +200,7 @@ class PDFExporter:
             # Reserved addresses at the start of the address map
             if reg_id == 0 and reg.raw_address_offset != 0:
                 print("reg_id == 0:", reg.inst_name)
-                offset_range = f'{self.format_address(0)} till {self.format_address((reg.raw_address_offset >> self.elem_addr_bits)-1)}'
+                offset_range = f'{self.format_address(0)} through {self.format_address((reg.raw_address_offset >> self.elem_addr_bits)-1)}'
                 addrmap_reg_list_strg['Offset']     = offset_range
                 addrmap_reg_list_strg['Identifier'] = "-" 
                 addrmap_reg_list_strg['Name']       = "-"
@@ -220,7 +224,7 @@ class PDFExporter:
                 # last address before 'reg' which is a multiple of 'reg' size
                 end_addr = ((reg_previous.raw_address_offset + reg_previous.total_size) >> self.elem_addr_bits) + (delta - delta % (reg.total_size << self.elem_addr_bits))
 
-                offset_range = f'{self.format_address(start_addr >> self.elem_addr_bits)} till {self.format_address(end_addr - 1)}'
+                offset_range = f'{self.format_address(start_addr >> self.elem_addr_bits)} through {self.format_address(end_addr - 1)}'
                 addrmap_reg_list_strg['Offset']     = offset_range 
                 addrmap_reg_list_strg['Identifier'] = "-" 
                 addrmap_reg_list_strg['Name']       = "-"
@@ -275,8 +279,8 @@ class PDFExporter:
             for field in reg.fields():
                 if isinstance(field, FieldNode):
                     fields_list.append(field)
-
-            fields_list.reverse()
+            if self.reverse:
+                fields_list.reverse()
 
             # Traverse all the fields
             for field in fields_list:
@@ -287,7 +291,12 @@ class PDFExporter:
                 fields_list_strg['Reset']       = self.get_field_reset(field)
                 fields_list_strg['Name']        = self.get_name(field)
                 fields_list_strg['Description'] = self.get_desc(field)
-
+                if field.get_property("encode") != None:
+                    fields_list_strg['Identifier'] += "<br/>" + field.get_property("encode").type_name
+                    encode = []
+                    for k, v in field.get_property("encode").members.items():
+                        encode.append([k, v.value, v.rdl_desc])
+                    fields_list_strg['encode'] = encode
                 self.pdf_create.create_fields_list_info(fields_list_strg)
 
             self.pdf_create.dump_field_list_info()

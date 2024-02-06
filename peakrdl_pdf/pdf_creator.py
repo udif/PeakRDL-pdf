@@ -185,6 +185,9 @@ class PDFCreator:
                                       leading=12),
                        alias='BTT')
 
+        styleSheet.add(ParagraphStyle(name='LtGrayBg',
+                                      backColor=colors.Color(0.75, 0.75, 0.75)),
+                       alias='LGB')
         return
 
     ############################################################################
@@ -251,23 +254,14 @@ class PDFCreator:
                 elements.append(Paragraph(reg_info_dict[key], styleSheet["BodyTextP"]))
                 elements.append(Spacer(0, 0.2*inch))
             elif key == "Absolute_address":
-                #elements.append(Paragraph(('<b>Absolute Address (' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*2 + reg_info_dict[key]), 
-                #                    styleSheet["BodyTextP"]))
                 t_elements.append([Paragraph('<b>Absolute Address (' + reg_info_dict["units"] + '):</b>'), Paragraph(reg_info_dict[key])])
             elif key == "Base_offset":
                 t_elements.append([Paragraph('<b>Base Offset (' + reg_info_dict["units"] + '):</b>'), Paragraph(reg_info_dict[key])])
             elif key == "Reset":
-                #elements.append(Paragraph(('<b>Reset: </b>' + ('&nbsp;')*23 + reg_info_dict[key]), 
-                #                    styleSheet["BodyTextP"]))
                 t_elements.append([Paragraph('<b>Reset:</b>'), Paragraph(reg_info_dict[key])])
             elif key == "Access":
-                #elements.append(Paragraph(('<b>Access: </b>' + ('&nbsp;')*20 + reg_info_dict[key]), 
-                #                    styleSheet["BodyTextP"]))
                 t_elements.append([Paragraph('<b>Access:</b>'), Paragraph(reg_info_dict[key])])
             elif key == "Size":
-                #elements.append(Paragraph(('<b>Size(' + reg_info_dict["units"] + '): </b>' + ('&nbsp;')*14 + reg_info_dict[key]), 
-                #                    styleSheet["BodyTextP"]))
-                #elements.append(Spacer(0, 0.2*inch))
                 t_elements.append([Paragraph('<b>Size(' + reg_info_dict["units"] + '):</b>'), Paragraph(reg_info_dict[key])])
             else:
                 print("Error - Not a valid key (%s) for the register" %key)
@@ -282,7 +276,7 @@ class PDFCreator:
 
         ## Actual Header data
         P_offset_header     = Paragraph('<b>Bits</b>',styleSheet["BodyTextT"])    
-        P_identifier_header = Paragraph('<b>Identifier</b>',styleSheet["BodyTextT"])    
+        P_identifier_header = Paragraph('<b>Identifier<br/>( / Enum)</b>',styleSheet["BodyTextT"])    
         P_access_header     = Paragraph('<b>Access</b>',styleSheet["BodyTextT"])    
         P_reset_header      = Paragraph('<b>Reset</b>',styleSheet["BodyTextT"])    
         P_name_header       = Paragraph('<b>Name / Description </b>',styleSheet["BodyTextT"])    
@@ -306,16 +300,20 @@ class PDFCreator:
         P_offset = Paragraph(reg_info_dict['Offset'],styleSheet["BodyTextP"])    
 
         # Identifier
+        id = reg_info_dict['Identifier']
         if is_reserved:
-            P_identifier = Paragraph(reg_info_dict['Identifier'],styleSheet["BodyTextP"])    
+            P_identifier = Paragraph(id,styleSheet["BodyTextP"])    
         else:
             # <a href="#ID" color="blue"> Text </a>
             link = '<a href="#%s" color="blue">' % (reg_info_dict['Id'] + (reg_info_dict['Name']).replace(" ",""))
-            P_identifier = Paragraph((link + reg_info_dict['Identifier'] + "</a>"),styleSheet["BodyTextP"])    
+            P_identifier = Paragraph((link + id + "</a>"),styleSheet["BodyTextP"])    
 
         # Name
         P_name = Paragraph(reg_info_dict['Name'],styleSheet["BodyTextP"])    
 
+        if id == '-':
+            P_identifier = None# Paragraph('',styleSheet["LtGrayBg"])  
+            P_name = None
         table_data_reg_list.append([P_offset, P_identifier, P_name])
 
     ############################################################################
@@ -328,13 +326,25 @@ class PDFCreator:
         P_access     = Paragraph(field_info_dict['Access'],styleSheet["BodyTextP"])    
         P_reset      = Paragraph(field_info_dict['Reset'],styleSheet["BodyTextP"])    
         P_name       = Paragraph(field_info_dict['Name'],styleSheet["BodyTextP"])    
-        P_desc       = Paragraph(field_info_dict['Description'],styleSheet["BodyTextP"])    
+        P_desc       = Paragraph(field_info_dict['Description'],styleSheet["BodyTextP"])
+        name_desc    = [P_name, P_desc]
+        if 'encode' in field_info_dict:
+            t = [[Paragraph('Name',styleSheet["BodyTextP"]), Paragraph('Val',styleSheet["BodyTextP"]), Paragraph('Desc',styleSheet["BodyTextP"])]]
+            t.extend([[Paragraph(str(x),styleSheet["BodyTextP"]) for x in row] for row in field_info_dict['encode']])
+            T_encode = Table(t, [2*cm, 1*cm, 5*cm], style=[
+                    ('GRID',(0,0),(-1,-1),0.5,doc_color),
+                    ('LINEABOVE',(0,1),(-1,1),1,colors.black),
+                    ('BACKGROUND',(0,0),(-1,0),colors.HexColor(0xD9D9D9)),
+                    ('ALIGN',(0,0),(-1,-1),'LEFT'),
+                    ('VALIGN',(0,1),(-1,-1),'MIDDLE'),
+                    ])
+            name_desc.append(T_encode)
 
         table_data_field_list.append([P_bits, 
                                       P_identifier, 
                                       P_access,
                                       P_reset,
-                                      [P_name,P_desc],
+                                      name_desc,
                                       ])
 
     ############################################################################
@@ -342,15 +352,19 @@ class PDFCreator:
     ############################################################################
     def dump_reg_list_info(self):
 
+        style=[
+                ('GRID',(0,0),(-1,-1),0.5,doc_color),
+                ('LINEABOVE',(0,1),(-1,1),1,colors.black),
+                ('BACKGROUND',(0,0),(-1,0),colors.HexColor(0xD9D9D9))
+                ]
+        for (i, l) in enumerate(table_data_reg_list):
+            if l[2] == None:
+                style.append(('BACKGROUND',(1,i),(-1,i),colors.HexColor(0xc0c0c0)))
         t=Table(table_data_reg_list,
                 colWidths=[120,120,200],
                 splitByRow=1,
                 repeatRows=1,
-                style=[
-                    ('GRID',(0,0),(-1,-1),0.5,doc_color),
-                    ('LINEABOVE',(0,1),(-1,1),1,colors.black),
-                    ('BACKGROUND',(0,0),(-1,0),colors.HexColor(0xD9D9D9))
-                    ])
+                style=style)
 
         elements.append(t)
         #elements.append(Spacer(1, 1*inch))
@@ -364,7 +378,7 @@ class PDFCreator:
     def dump_field_list_info(self):
 
         t=Table(table_data_field_list,
-                colWidths=[45,80,50,83,192],
+                colWidths=[45,60,50,50,245],
                 splitByRow=1,
                 repeatRows=1,
                 style=[
