@@ -196,7 +196,7 @@ class PDFExporter:
             # Reserved addresses at the start of the address map
             if reg_id == 0 and reg.raw_address_offset != 0:
                 print("reg_id == 0:", reg.inst_name)
-                offset_range = "%s till %s" % ((self.format_address(0)),self.format_address((reg.raw_address_offset >> self.elem_addr_bits)-1))
+                offset_range = f'{self.format_address(0)} till {self.format_address((reg.raw_address_offset >> self.elem_addr_bits)-1)}'
                 addrmap_reg_list_strg['Offset']     = offset_range
                 addrmap_reg_list_strg['Identifier'] = "-" 
                 addrmap_reg_list_strg['Name']       = "-"
@@ -220,7 +220,7 @@ class PDFExporter:
                 # last address before 'reg' which is a multiple of 'reg' size
                 end_addr = ((reg_previous.raw_address_offset + reg_previous.total_size) >> self.elem_addr_bits) + (delta - delta % (reg.total_size << self.elem_addr_bits))
 
-                offset_range = "%s till %s" % (self.format_address(start_addr >> self.elem_addr_bits)),self.format_address(end_addr - 1)
+                offset_range = f'{self.format_address(start_addr >> self.elem_addr_bits)} till {self.format_address(end_addr - 1)}'
                 addrmap_reg_list_strg['Offset']     = offset_range 
                 addrmap_reg_list_strg['Identifier'] = "-" 
                 addrmap_reg_list_strg['Name']       = "-"
