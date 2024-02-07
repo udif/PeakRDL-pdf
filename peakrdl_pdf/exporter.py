@@ -232,7 +232,6 @@ class PDFExporter:
 
             # Normal registers in the address map
             if not reg.get_property("unroll", default=False) or not reg.is_array:
-                print("rolled:", reg.inst_name)
                 addrmap_reg_list_strg['Offset']     = self.format_address(reg.raw_address_offset >> self.elem_addr_bits)
                 if reg.is_array:
                     addrmap_reg_list_strg['Identifier'] = self.get_inst_name(reg) + '[' + ']['.join((str(x) for x in reg.array_dimensions)) + ']'
@@ -242,7 +241,6 @@ class PDFExporter:
                 addrmap_reg_list_strg['Name']       = self.get_inst_name(reg)
                 self.pdf_create.create_reg_list_info(addrmap_reg_list_strg, 0)
             else:
-                print("unrolled:", reg.inst_name)
                 for ureg in reg.unrolled():
                     addrmap_reg_list_strg['Offset']     = self.format_address(ureg.address_offset >> self.elem_addr_bits) 
                     addrmap_reg_list_strg['Identifier'] = self.get_inst_name(ureg) + '[' + ']['.join((str(x) for x in ureg.current_idx)) + ']'
