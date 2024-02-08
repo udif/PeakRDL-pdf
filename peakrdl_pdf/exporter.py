@@ -583,7 +583,7 @@ class PDFExporter:
         return self.format_number(address, str(self.address_width))
 
     def format_number(self, address: str, bits : int) -> str:
-        no_of_nib = (self.address_width + 3) >> 2 # integer divide by 4, rounded up
+        no_of_nib = (bits + 3) >> 2 # integer divide by 4, rounded up
         total_width = ((no_of_nib + 3) >> 2) + no_of_nib
         # format the string to have underscore in hex value
         format_str = '{:0' + str(total_width) + '_x}'
