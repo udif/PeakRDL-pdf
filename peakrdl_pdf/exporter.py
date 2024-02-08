@@ -458,24 +458,7 @@ class PDFExporter:
 
         # Format the value
         field_width = field.width
-        no_of_nib = field_width/4
-
-        # 64bit data
-        if no_of_nib == 16:
-            format_number = no_of_nib + 3
-        # 32bit data
-        elif no_of_nib == 8:
-            format_number = no_of_nib + 1
-        #  16bit or 8bit data     
-        else:
-            format_number = no_of_nib 
-
-        # format the string to have underscore in hex value
-        format_str = '{:0' + str(int(format_number)) + '_x}'
-        final_value = (format_str.format(field_reset))
-
-        return (str(field_width) +"'h"+ final_value.upper())
-
+        return self.format_number(field_reset, field_width)
 
     def get_mem_access(self, mem: MemNode) -> str:
         sw = mem.get_property("sw")
@@ -532,23 +515,7 @@ class PDFExporter:
 
         # Format the value
         register_width = node.get_property('regwidth')
-        no_of_nib = register_width/4
-
-        # 64bit data
-        if no_of_nib == 16:
-            format_number = no_of_nib + 3
-        # 32bit data
-        elif no_of_nib == 8:
-            format_number = no_of_nib + 1
-        #  16bit or 8bit data     
-        else:
-            format_number = no_of_nib 
-
-        # format the string to have underscore in hex value
-        format_str = '{:0' + str(int(format_number)) + '_x}'
-        final_value = (format_str.format(reg_reset))
-
-        return (str(register_width) +"'h"+ final_value.upper())
+        return self.format_number(reg_reset, register_width)
 
     def get_reg_size(self, node: RegNode) -> str:
         """
@@ -613,21 +580,15 @@ class PDFExporter:
         return (self.format_address(base_address >> self.elem_addr_bits)) 
 
     def format_address(self, address: str) -> str:
+        return self.format_number(address, str(self.address_width))
 
-        no_of_nib = self.address_width/4
-
-        # 64bit address
-        if no_of_nib == 16:
-            format_number = no_of_nib + 3
-        # 32bit address     
-        else:
-            format_number = no_of_nib +1
-
+    def format_number(self, address: str, bits : int) -> str:
+        no_of_nib = (self.address_width + 3) >> 2 # integer divide by 4, rounded up
+        total_width = ((no_of_nib + 3) >> 2) + no_of_nib
         # format the string to have underscore in hex value
-        format_str = '{:0' + str(int(format_number)) + '_x}'
+        format_str = '{:0' + str(total_width) + '_x}'
         final_value = (format_str.format(address))
-
-        return (str(self.address_width) +"'h"+ final_value.upper())
+        return (bits +"'h"+ final_value.upper())
 
     def get_array_address_offset_expr(self, node: AddressableNode) -> str:
         """
