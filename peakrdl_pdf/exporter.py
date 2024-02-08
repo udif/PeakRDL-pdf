@@ -584,11 +584,11 @@ class PDFExporter:
 
     def format_number(self, address: str, bits : int) -> str:
         no_of_nib = (bits + 3) >> 2 # integer divide by 4, rounded up
-        total_width = ((no_of_nib + 3) >> 2) + no_of_nib
+        total_width = ((no_of_nib - 1) >> 2) + no_of_nib
         # format the string to have underscore in hex value
         format_str = '{:0' + str(total_width) + '_x}'
         final_value = (format_str.format(address))
-        return (bits +"'h"+ final_value.upper())
+        return (str(bits) +"'h"+ final_value.upper())
 
     def get_array_address_offset_expr(self, node: AddressableNode) -> str:
         """
