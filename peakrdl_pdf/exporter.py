@@ -580,7 +580,7 @@ class PDFExporter:
         return (self.format_address(base_address >> self.elem_addr_bits)) 
 
     def format_address(self, address: str) -> str:
-        return self.format_number(address, str(self.address_width))
+        return self.format_number(address, self.address_width)
 
     def format_number(self, address: str, bits : int) -> str:
         no_of_nib = (bits + 3) >> 2 # integer divide by 4, rounded up
